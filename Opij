@@ -1,124 +1,99 @@
---// Services
 local player = game.Players.LocalPlayer
-local UIS = game:GetService("UserInputService")
-local RS = game:GetService("RunService")
+local character = player.Character or player.CharacterAdded:Wait()
 
---// Create GUI
-local gui = Instance.new("ScreenGui", player.PlayerGui)
-gui.Name = "DashUI"
-gui.ResetOnSpawn = false  -- Don't disappear on death
+local gui = Instance.new("ScreenGui")
+gui.Name = "FollowBlockUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 160)
-frame.Position = UDim2.new(0.05, 0, 0.4, 0)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 220, 0, 140)
+frame.Position = UDim2.new(0.5, -110, 0.5, -70)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-frame.BackgroundTransparency = 0.1
 frame.Active = true
 frame.Draggable = true
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+frame.Parent = gui
 
-local title = Instance.new("TextLabel", frame)
-title.Text = "Dash UI"
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 22
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
 
-local toggle = Instance.new("TextButton", frame)
-toggle.Text = "Dash: OFF"
-toggle.Size = UDim2.new(0.9, 0, 0, 30)
-toggle.Position = UDim2.new(0.05, 0, 0, 40)
-toggle.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggle.Font = Enum.Font.GothamBold
-toggle.TextSize = 20
-Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
+-- ปุ่ม Start
+local startBtn = Instance.new("TextButton")
+startBtn.Size = UDim2.new(0, 200, 0, 40)
+startBtn.Position = UDim2.new(0, 10, 0, 10)
+startBtn.Text = "Start Dash Block"
+startBtn.Font = Enum.Font.SourceSansBold
+startBtn.TextColor3 = Color3.fromRGB(255,255,255)
+startBtn.TextSize = 20
+startBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+startBtn.Parent = frame
 
-local speedBox = Instance.new("TextBox", frame)
-speedBox.PlaceholderText = "Speed (eg. 50)"
-speedBox.Size = UDim2.new(0.9, 0, 0, 30)
-speedBox.Position = UDim2.new(0.05, 0, 0, 80)
-speedBox.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedBox.Font = Enum.Font.Gotham
-speedBox.TextSize = 18
-speedBox.ClearTextOnFocus = false
-Instance.new("UICorner", speedBox).CornerRadius = UDim.new(0, 8)
+local startCorner = Instance.new("UICorner")
+startCorner.CornerRadius = UDim.new(0, 8)
+startCorner.Parent = startBtn
 
-local info = Instance.new("TextLabel", frame)
-info.Text = "Hide/Show: +/-"
-info.Size = UDim2.new(1, 0, 0, 25)
-info.Position = UDim2.new(0, 0, 1, -25)
-info.BackgroundTransparency = 1
-info.TextColor3 = Color3.fromRGB(255, 255, 255)
-info.Font = Enum.Font.Gotham
-info.TextSize = 14
+-- ปุ่ม Stop
+local stopBtn = Instance.new("TextButton")
+stopBtn.Size = UDim2.new(0, 200, 0, 40)
+stopBtn.Position = UDim2.new(0, 10, 0, 60)
+stopBtn.Text = "Stop Dash Block"
+stopBtn.Font = Enum.Font.SourceSansBold
+stopBtn.TextColor3 = Color3.fromRGB(255,255,255)
+stopBtn.TextSize = 20
+stopBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+stopBtn.Parent = frame
 
---// Variables
-local active = false
-local dashPart = nil
+local stopCorner = Instance.new("UICorner")
+stopCorner.CornerRadius = UDim.new(0, 8)
+stopCorner.Parent = stopBtn
 
---// Function to create Dash Part
-local function createDashPart()
-	if dashPart then dashPart:Destroy() end
-	dashPart = Instance.new("Part")
-	dashPart.Size = Vector3.new(2, 5, 2)
-	dashPart.Anchored = true
-	dashPart.CanCollide = false
-	dashPart.Transparency = 0.3
-	dashPart.Material = Enum.Material.Neon
-	dashPart.Color = Color3.fromRGB(0, 255, 0)
-	dashPart.Parent = workspace
-	dashPart.Name = "DashPart"
-end
+-- ตัวแปรเก็บ Part และ RunService
+local part = nil
+local runConnection = nil
 
---// Toggle button
-toggle.MouseButton1Click:Connect(function()
-	active = not active
-	if active then
-		toggle.Text = "Dash: ON"
-		toggle.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-		createDashPart()
-	else
-		toggle.Text = "Dash: OFF"
-		toggle.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-		if dashPart then
-			dashPart:Destroy()
-			dashPart = nil
-		end
-	end
+-- ปุ่ม Start
+startBtn.MouseButton1Click:Connect(function()
+    -- ถ้ามีอยู่แล้ว ไม่ต้องสร้างใหม่
+    if part then return end
+
+    character = player.Character or player.CharacterAdded:Wait()
+
+    -- สร้าง Part
+    part = Instance.new("Part")
+    part.Size = Vector3.new(5,5,5)
+    part.Anchored = false
+    part.CanCollide = true
+    part.BrickColor = BrickColor.new("Really red")
+    part.Material = Enum.Material.Neon
+    part.Parent = workspace
+
+    -- BodyVelocity ให้พุ่ง
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    bodyVelocity.Parent = part
+
+    -- ให้ Part ติดหลังตัวเราตลอด
+    local RunService = game:GetService("RunService")
+    runConnection = RunService.RenderStepped:Connect(function()
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            -- ให้อยู่หลังตัวเรา
+            part.Position = character.HumanoidRootPart.Position - character.HumanoidRootPart.CFrame.LookVector * 5
+            -- ให้พุ่งไปตามทิศที่เรามอง
+            bodyVelocity.Velocity = character.HumanoidRootPart.CFrame.LookVector * 100
+        end
+    end)
 end)
 
---// Hide/Show UI with + and -
-UIS.InputBegan:Connect(function(input)
-	if input.KeyCode == Enum.KeyCode.Equals then
-		frame.Visible = true
-	elseif input.KeyCode == Enum.KeyCode.Minus then
-		frame.Visible = false
-	end
-end)
+-- ปุ่ม Stop
+stopBtn.MouseButton1Click:Connect(function()
+    if part then
+        -- ปิด loop
+        if runConnection then runConnection:Disconnect() end
+        runConnection = nil
 
---// Update Dash Part position
-RS.RenderStepped:Connect(function()
-	if active and dashPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-		local hrp = player.Character.HumanoidRootPart
-		dashPart.Position = hrp.Position + Vector3.new(0, 2.5, 0)
-	end
-end)
-
---// Dash movement when Shift pressed
-UIS.InputBegan:Connect(function(input)
-	if input.KeyCode == Enum.KeyCode.LeftShift and active and dashPart then
-		local char = player.Character
-		if char and char:FindFirstChild("HumanoidRootPart") then
-			local speed = tonumber(speedBox.Text) or 50
-			local dir = workspace.CurrentCamera.CFrame.LookVector
-			dashPart.Anchored = false
-			dashPart.Velocity = dir * speed
-			wait(0.2)
-			dashPart.Anchored = true
-			dashPart.Velocity = Vector3.new(0, 0, 0)
-		end
-	end
+        -- ลบ Part
+        part:Destroy()
+        part = nil
+    end
 end)
